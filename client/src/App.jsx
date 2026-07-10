@@ -3,10 +3,10 @@ import {
   LayoutDashboard, Settings, GraduationCap, Users, WalletCards, ClipboardCheck, 
   CalendarCheck, Bus, MessageSquareText, ShieldAlert, BarChart3, Bell, Menu, X, 
   Plus, Search, Download, Upload, IndianRupee, ChevronDown, LockKeyhole, Mail, 
-  Eye, EyeOff, UserPlus, Receipt, BellRing, MoreHorizontal, Calendar, Trash2 
+  Eye, EyeOff, UserPlus, Receipt, BellRing, MoreHorizontal, Calendar, Trash2, Printer 
 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
-import { apiCall, apiUpload, login, logout, getUser, getToken, updateProfile } from './api';
+import { apiCall, apiUpload, login, logout, getUser, getToken, updateProfile, API_URL } from './api';
 
 const navy = '#071b35';
 const nav = [
@@ -571,6 +571,7 @@ const config = {
 function Table({ cols, rows, onDelete }) {
   const user = getUser() || { role: 'super_admin' };
   const canDelete = user.role === 'super_admin' || user.role === 'admin_staff';
+  const hasActions = canDelete || rows.some(r => r.receipt_number);
 
   return (
     <div className="overflow-x-auto">
@@ -578,13 +579,13 @@ function Table({ cols, rows, onDelete }) {
         <thead className="bg-slate-50 text-xs uppercase text-slate-500">
           <tr>
             {cols.map(([k, l]) => <th className="px-5 py-4" key={k}>{l}</th>)}
-            {canDelete && <th className="px-5 py-4 text-right">Actions</th>}
+            {hasActions && <th className="px-5 py-4 text-right">Actions</th>}
           </tr>
         </thead>
         <tbody className="divide-y">
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={cols.length + (canDelete ? 1 : 0)} className="text-center py-8 text-slate-400">
+              <td colSpan={cols.length + (hasActions ? 1 : 0)} className="text-center py-8 text-slate-400">
                 No records found. Click 'Add New' to add entries.
               </td>
             </tr>
@@ -604,15 +605,28 @@ function Table({ cols, rows, onDelete }) {
                     )}
                   </td>
                 ))}
-                {canDelete && (
-                  <td className="px-5 py-4 text-right">
-                    <button 
-                      onClick={() => onDelete(r.id)} 
-                      className="text-rose-500 hover:text-rose-700 p-1 inline-flex items-center"
-                      title="Delete Record"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                {hasActions && (
+                  <td className="px-5 py-4 text-right whitespace-nowrap">
+                    <div className="flex justify-end items-center gap-3">
+                      {r.receipt_number && (
+                        <button 
+                          onClick={() => window.open(`${API_URL}/payments/${r.id}/receipt?authorization=${getToken()}`, '_blank')}
+                          className="text-sky-600 hover:text-sky-800 p-1 inline-flex items-center"
+                          title="Print Receipt"
+                        >
+                          <Printer size={16} />
+                        </button>
+                      )}
+                      {canDelete && (
+                        <button 
+                          onClick={() => onDelete(r.id)} 
+                          className="text-rose-500 hover:text-rose-700 p-1 inline-flex items-center"
+                          title="Delete Record"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
                   </td>
                 )}
               </tr>

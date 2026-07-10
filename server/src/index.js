@@ -701,25 +701,54 @@ app.get('/api/payments/:id/receipt', auth, async (req, res, next) => {
     const p = (await q('SELECT p.*, s.name, s.student_code, s.admission_number FROM payments p JOIN students s ON s.id=p.student_id WHERE p.id=$1', [req.params.id]))[0];
     if (!p) return res.status(404).json({ message: 'Payment not found' });
     
-    const doc = new PDFDocument({ margin: 50 });
+    const doc = new PDFDocument({ size: 'A5', layout: 'landscape', margin: 30 });
     res.setHeader('Content-Type', 'application/pdf');
     doc.pipe(res);
     
-    doc.fontSize(20).fillColor('#071b35').text('VALUES JUNIOR COLLEGE', { align: 'center' });
-    doc.fontSize(11).text('Official Fee Payment Receipt', { align: 'center' }).moveDown(2);
+    // Draw decorative border
+    doc.rect(15, 15, doc.page.width - 30, doc.page.height - 30).strokeColor('#071b35').strokeWidth(2).stroke();
+    doc.rect(18, 18, doc.page.width - 36, doc.page.height - 36).strokeColor('#bae6fd').strokeWidth(1).stroke();
+
+    doc.fontSize(18).fillColor('#071b35').font('Helvetica-Bold').text('VALUES JUNIOR COLLEGE', { align: 'center' });
+    doc.fontSize(9).fillColor('#64748b').font('Helvetica').text('Official Fee Payment Receipt', { align: 'center' }).moveDown(1);
     
-    doc.fillColor('#111')
-      .text('Receipt: ' + p.receipt_number)
-      .text('Student Name: ' + p.name)
-      .text('Student ID (Code): ' + (p.student_code || p.admission_number))
-      .text('Date: ' + new Date(p.payment_date).toLocaleDateString())
-      .text('Mode: ' + p.payment_mode)
-      .moveDown()
-      .fontSize(16)
-      .text('Amount Paid: INR ' + Number(p.amount_paid).toFixed(2))
-      .moveDown(4)
-      .fontSize(10)
-      .text('Authorized Signature: ____________________', { align: 'right' });
+    // Receipt info container
+    const leftMargin = 40;
+    doc.fontSize(10).fillColor('#334155');
+    
+    doc.font('Helvetica-Bold').text('Receipt Number:', leftMargin, 75);
+    doc.font('Helvetica').text(p.receipt_number, leftMargin + 110, 75);
+    
+    doc.font('Helvetica-Bold').text('Student Name:', leftMargin, 95);
+    doc.font('Helvetica').text(p.name, leftMargin + 110, 95);
+    
+    doc.font('Helvetica-Bold').text('Student ID (Code):', leftMargin, 115);
+    doc.font('Helvetica').text(p.student_code || p.admission_number || '-', leftMargin + 110, 115);
+    
+    doc.font('Helvetica-Bold').text('Payment Date:', leftMargin, 135);
+    doc.font('Helvetica').text(new Date(p.payment_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }), leftMargin + 110, 135);
+    
+    doc.font('Helvetica-Bold').text('Payment Mode:', leftMargin, 155);
+    doc.font('Helvetica').text(p.payment_mode, leftMargin + 110, 155);
+    
+    // Paid Amount box
+    doc.rect(leftMargin, 175, doc.page.width - (leftMargin * 2), 35).fillAndStroke('#f0f9ff', '#bae6fd');
+    doc.fontSize(12).fillColor('#0369a1').font('Helvetica-Bold').text('Amount Paid: INR ' + Number(p.amount_paid).toLocaleString('en-IN', { minimumFractionDigits: 2 }), leftMargin + 15, 187);
+    
+    // Signature lines
+    doc.fontSize(9).fillColor('#475569');
+    
+    // Left side: Student / Parent Signature
+    doc.font('Helvetica-Oblique').text('Student/Parent Signature', leftMargin, 250);
+    doc.font('Helvetica').text('_______________________', leftMargin, 245);
+    
+    // Right side: Accountant Signature
+    doc.font('Helvetica-Bold').text('Authorized Accountant Signature', doc.page.width - leftMargin - 160, 250, { align: 'right', width: 160 });
+    doc.font('Helvetica-Oblique').fillColor('#0284c7').text('Jaswanth Narayana', doc.page.width - leftMargin - 160, 230, { align: 'right', width: 160 });
+    doc.font('Helvetica').fillColor('#475569').text('_______________________', doc.page.width - leftMargin - 160, 240, { align: 'right', width: 160 });
+    
+    // Footer notes
+    doc.fontSize(8).fillColor('#94a3b8').font('Helvetica').text('This is a computer-generated official receipt, validated by the authorized finance department.', leftMargin, doc.page.height - 45, { align: 'center', width: doc.page.width - (leftMargin * 2) });
       
     doc.end();
   } catch (e) {
