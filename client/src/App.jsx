@@ -608,13 +608,15 @@ function Table({ cols, rows, onDelete }) {
                   <td className="px-5 py-4 text-right whitespace-nowrap">
                     <div className="flex justify-end items-center gap-3">
                       {r.receipt_number && (
-                        <button 
-                          onClick={() => window.open(`${API_URL}/payments/${r.id}/receipt?authorization=${getToken()}`, '_blank')}
+                        <a 
+                          href={`${API_URL}/payments/${r.id}/receipt?authorization=${getToken()}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="text-sky-600 hover:text-sky-800 p-1 inline-flex items-center"
-                          title="Print Receipt"
+                          title="Print / View Receipt"
                         >
                           <Printer size={16} />
-                        </button>
+                        </a>
                       )}
                       {canDelete && (
                         <button 
