@@ -10,6 +10,7 @@ import ExcelJS from 'exceljs';
 import PDFDocument from 'pdfkit';
 import pg from 'pg';
 import { z } from 'zod';
+import path from 'path';
 
 const db = new pg.Pool({
   connectionString: process.env.DATABASE_URL
@@ -24,9 +25,9 @@ app.use(helmet({
   contentSecurityPolicy: false // Disable CSP if it conflicts with local dev/Vite assets, or configure appropriately
 }));
 
-// Strong CORS configuration
+// Dynamic CORS origin reflection
 app.use(cors({
-  origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+  origin: true,
   credentials: true
 }));
 
@@ -746,6 +747,16 @@ app.get('/api/dashboard', auth, async (req, res, next) => {
   } catch (e) {
     next(e);
   }
+});
+
+// Serve static client assets in production
+const __dirname = path.resolve();
+app.use(express.static(path.join(__dirname, 'client/dist')));
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  res.sendFile(path.join(__dirname, 'client/dist/index.html'));
 });
 
 // Error handling - Firewall Check - No stack traces leaking

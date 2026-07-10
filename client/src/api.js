@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:4000/api';
+const API_URL = import.meta.env.VITE_API_URL || (window.location.origin.includes('localhost:5173') ? 'http://localhost:4000/api' : '/api');
 const TOKEN_KEY = 'values_session_token';
 const USER_KEY = 'values_session_user';
 
