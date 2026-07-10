@@ -11,6 +11,10 @@ import PDFDocument from 'pdfkit';
 import pg from 'pg';
 import { z } from 'zod';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const db = new pg.Pool({
   connectionString: process.env.DATABASE_URL
@@ -710,7 +714,7 @@ app.get('/api/payments/:id/receipt', auth, async (req, res, next) => {
     doc.rect(18, 18, doc.page.width - 36, doc.page.height - 36).strokeColor('#bae6fd').strokeWidth(1).stroke();
 
     // Embed logo image at top center
-    const logoPath = path.join(path.resolve(), 'server/src/logo.png');
+    const logoPath = path.join(__dirname, 'logo.png');
     doc.image(logoPath, (doc.page.width - 160) / 2, 23, { width: 160 });
     
     // Receipt info container
@@ -781,13 +785,12 @@ app.get('/api/dashboard', auth, async (req, res, next) => {
 });
 
 // Serve static client assets in production
-const __dirname = path.resolve();
-app.use(express.static(path.join(__dirname, 'client/dist')));
+app.use(express.static(path.join(__dirname, '../../client/dist')));
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api')) {
     return next();
   }
-  res.sendFile(path.join(__dirname, 'client/dist/index.html'));
+  res.sendFile(path.join(__dirname, '../../client/dist/index.html'));
 });
 
 // Error handling - Firewall Check - No stack traces leaking
