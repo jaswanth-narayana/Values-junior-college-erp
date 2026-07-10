@@ -757,8 +757,7 @@ app.get('/api/payments/:id/receipt', auth, async (req, res, next) => {
     
     // Right side: Accountant Signature
     doc.font('Helvetica-Bold').text('Authorized Accountant Signature', doc.page.width - leftMargin - 160, 252, { align: 'right', width: 160 });
-    doc.font('Helvetica-Oblique').fillColor('#0284c7').text('Jaswanth Narayana', doc.page.width - leftMargin - 160, 232, { align: 'right', width: 160 });
-    doc.font('Helvetica').fillColor('#475569').text('_______________________', doc.page.width - leftMargin - 160, 242, { align: 'right', width: 160 });
+    doc.font('Helvetica').fillColor('#475569').text('_______________________', doc.page.width - leftMargin - 160, 230, { align: 'right', width: 160 });
     
     // Footer notes
     doc.fontSize(7.5).fillColor('#94a3b8').font('Helvetica').text('This is a computer-generated official receipt, validated by the authorized finance department.', leftMargin, doc.page.height - 40, { align: 'center', width: doc.page.width - (leftMargin * 2) });
