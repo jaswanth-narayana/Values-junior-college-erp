@@ -1,4 +1,7 @@
-export const API_URL = import.meta.env.VITE_API_URL || (window.location.origin.includes('localhost:5173') ? 'http://localhost:4000/api' : '/api');
+export const API_URL = import.meta.env.VITE_API_URL || 
+  ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && window.location.port !== '4000'
+    ? 'http://localhost:4000/api' 
+    : '/api');
 const TOKEN_KEY = 'values_session_token';
 const USER_KEY = 'values_session_user';
 
