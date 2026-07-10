@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
 import { apiCall, apiUpload, login, logout, getUser, getToken, updateProfile, API_URL } from './api';
+import logo from './logo.png';
 
 const navy = '#071b35';
 const nav = [
@@ -136,13 +137,11 @@ function Login({ go }) {
 
 function Brand({ small = false }) {
   return (
-    <div className="relative flex items-center gap-3">
-      <div className="grid h-11 w-11 place-items-center rounded-xl bg-sky-500 text-xl font-black text-white">V</div>
-      {!small && (
-        <div>
-          <div className="font-black text-white">VALUES</div>
-          <div className="text-[10px] tracking-[.15em] text-sky-200">JUNIOR COLLEGE</div>
-        </div>
+    <div className="relative flex items-center justify-center gap-3">
+      {small ? (
+        <div className="grid h-11 w-11 place-items-center rounded-xl bg-sky-500 text-xl font-black text-white">V</div>
+      ) : (
+        <img src={logo} alt="Values Junior College" className="h-10 object-contain bg-white px-2 py-0.5 rounded-lg" />
       )}
     </div>
   );
