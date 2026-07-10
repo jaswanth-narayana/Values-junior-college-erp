@@ -710,8 +710,15 @@ app.get('/api/payments/:id/receipt', auth, async (req, res, next) => {
     doc.pipe(res);
     
     // Draw decorative border
-    doc.rect(15, 15, doc.page.width - 30, doc.page.height - 30).strokeColor('#071b35').strokeWidth(2).stroke();
-    doc.rect(18, 18, doc.page.width - 36, doc.page.height - 36).strokeColor('#bae6fd').strokeWidth(1).stroke();
+    doc.lineWidth(2)
+       .strokeColor('#071b35')
+       .rect(15, 15, doc.page.width - 30, doc.page.height - 30)
+       .stroke();
+
+    doc.lineWidth(1)
+       .strokeColor('#bae6fd')
+       .rect(18, 18, doc.page.width - 36, doc.page.height - 36)
+       .stroke();
 
     // Embed logo image at top center
     const logoPath = path.join(__dirname, 'logo.png');
