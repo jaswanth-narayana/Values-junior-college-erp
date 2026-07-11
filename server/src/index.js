@@ -475,6 +475,28 @@ for (const [name, [table, fields]] of Object.entries(resources)) {
   });
 }
 
+// Special override endpoint for students to include Class & Section names
+app.get('/api/students', auth, async (req, res, next) => {
+  try {
+    const page = Math.max(1, +req.query.page || 1);
+    const limit = Math.min(1000, +req.query.limit || 100);
+    const offset = (page - 1) * limit;
+    
+    const data = await q(
+      `SELECT s.*, c.name as class_name, sec.name as section_name 
+       FROM students s 
+       LEFT JOIN classes c ON c.id = s.class_id 
+       LEFT JOIN sections sec ON sec.id = s.section_id 
+       ORDER BY s.created_at DESC 
+       LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    );
+    res.json({ data, page, limit });
+  } catch (e) {
+    next(e);
+  }
+});
+
 // Student Excel Import
 app.post('/api/students/import', auth, allow('super_admin', 'admin_staff', 'teacher'), upload.single('file'), async (req, res, next) => {
   try {
@@ -497,19 +519,21 @@ app.post('/api/students/import', auth, allow('super_admin', 'admin_staff', 'teac
     };
 
     for (let i = 2; i <= ws.rowCount; i++) {
-      const rowValues = ws.getRow(i).values;
-      if (!rowValues) continue;
+      const row = ws.getRow(i);
+      if (!row || row.cellCount === 0) continue;
       
-      const name = getCellString(rowValues[1], 140);
-      const admission = getCellString(rowValues[2], 50);
-      const roll = getCellString(rowValues[3], 30);
-      const className = getCellString(rowValues[4], 80);
-      const section = getCellString(rowValues[5], 30);
-      const mobile = getCellString(rowValues[6], 20);
-      const father = getCellString(rowValues[7], 120);
-      const mother = getCellString(rowValues[8], 120);
-      const parentMobile = getCellString(rowValues[9], 20);
-      const address = getCellString(rowValues[10]);
+      const name = getCellString(row.getCell(1).value, 140);
+      const admission = getCellString(row.getCell(2).value, 50);
+      const roll = getCellString(row.getCell(3).value, 30);
+      const className = getCellString(row.getCell(4).value, 80);
+      const section = getCellString(row.getCell(5).value, 30);
+      const gender = getCellString(row.getCell(6).value, 20);
+      const mobile = getCellString(row.getCell(7).value, 20);
+      const email = getCellString(row.getCell(8).value, 160);
+      const father = getCellString(row.getCell(9).value, 120);
+      const mother = getCellString(row.getCell(10).value, 120);
+      const parentMobile = getCellString(row.getCell(11).value, 20);
+      const address = getCellString(row.getCell(12).value);
       
       if (!name || !admission) continue;
 
@@ -533,10 +557,10 @@ app.post('/api/students/import', auth, allow('super_admin', 'admin_staff', 'teac
       }
       
       await q(
-        `INSERT INTO students(name, admission_number, roll_number, mobile, class_id, section_id, father_name, mother_name, parent_mobile, address) 
-         VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+        `INSERT INTO students(name, admission_number, roll_number, gender, mobile, email, class_id, section_id, father_name, mother_name, parent_mobile, address) 
+         VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
          ON CONFLICT(admission_number) DO NOTHING`,
-        [name, admission, roll, mobile, classId, sectionId, father, mother, parentMobile, address || (className + ' / ' + section)]
+        [name, admission, roll, gender, mobile, email, classId, sectionId, father, mother, parentMobile, address || (className + ' / ' + section)]
       );
       imported++;
     }
@@ -568,18 +592,18 @@ app.post('/api/staff/import', auth, allow('super_admin', 'admin_staff'), upload.
     };
 
     for (let i = 2; i <= ws.rowCount; i++) {
-      const rowValues = ws.getRow(i).values;
-      if (!rowValues) continue;
+      const row = ws.getRow(i);
+      if (!row || row.cellCount === 0) continue;
 
-      const staffCode = getCellString(rowValues[1], 30);
-      const name = getCellString(rowValues[2], 140);
-      const qualification = getCellString(rowValues[3], 120);
-      const department = getCellString(rowValues[4], 100);
-      const subject = getCellString(rowValues[5], 100);
-      const mobile = getCellString(rowValues[6], 20);
-      const email = getCellString(rowValues[7], 160);
-      const address = getCellString(rowValues[8]);
-      const joiningDateVal = rowValues[9];
+      const staffCode = getCellString(row.getCell(1).value, 30);
+      const name = getCellString(row.getCell(2).value, 140);
+      const qualification = getCellString(row.getCell(3).value, 120);
+      const department = getCellString(row.getCell(4).value, 100);
+      const subject = getCellString(row.getCell(5).value, 100);
+      const mobile = getCellString(row.getCell(6).value, 20);
+      const email = getCellString(row.getCell(7).value, 160);
+      const address = getCellString(row.getCell(8).value);
+      const joiningDateVal = row.getCell(9).value;
 
       if (!staffCode || !name) continue;
 
@@ -615,7 +639,9 @@ app.get('/api/students/import-template', auth, async (req, res, next) => {
       { header: 'Roll Number', key: 'roll', width: 12 },
       { header: 'Class', key: 'className', width: 15 },
       { header: 'Section', key: 'section', width: 10 },
+      { header: 'Gender', key: 'gender', width: 12 },
       { header: 'Mobile', key: 'mobile', width: 15 },
+      { header: 'Email', key: 'email', width: 22 },
       { header: 'Father Name', key: 'father', width: 18 },
       { header: 'Mother Name', key: 'mother', width: 18 },
       { header: 'Parent Mobile', key: 'parentMobile', width: 15 },
@@ -628,7 +654,9 @@ app.get('/api/students/import-template', auth, async (req, res, next) => {
       roll: '101',
       className: 'Junior Inter',
       section: 'A',
+      gender: 'Male',
       mobile: '9876543210',
+      email: 'aarav@values.edu',
       father: 'Ramesh Sharma',
       mother: 'Sita Sharma',
       parentMobile: '9988776655',

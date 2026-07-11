@@ -528,7 +528,7 @@ const config = {
   Students: [
     'Manage admissions, profiles and academic details.',
     'students',
-    [['admission_number', 'Admission No.'], ['roll_number', 'Roll No.'], ['name', 'Student Name'], ['mobile', 'Mobile'], ['email', 'Email'], ['gender', 'Gender']]
+    [['admission_number', 'Admission No.'], ['roll_number', 'Roll No.'], ['name', 'Student Name'], ['class_name', 'Class'], ['section_name', 'Section'], ['gender', 'Gender'], ['mobile', 'Mobile'], ['email', 'Email']]
   ],
   Staff: [
     'Manage faculty, departments and login access.',
