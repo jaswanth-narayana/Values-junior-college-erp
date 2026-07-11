@@ -146,7 +146,7 @@ app.put('/api/auth/profile', auth, async (req, res, next) => {
       }
 
       const updated = (await q('SELECT id, username, name, email, role FROM users WHERE id = $1', [userId]))[0];
-      const token = jwt.sign(updated, process.env.JWT_SECRET, { expiresIn: '24h' });
+      const token = jwt.sign(updated, JWT_SECRET, { expiresIn: '24h' });
       return res.json({ message: 'Profile updated successfully', user: updated, token });
     } else {
       let passwordHash = null;
