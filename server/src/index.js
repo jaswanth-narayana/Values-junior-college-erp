@@ -843,6 +843,12 @@ app.use((err, req, res, next) => {
   if (err.code === '23505') {
     return res.status(409).json({ message: 'Record already exists' });
   }
+
+  if (err.code === '23503') {
+    return res.status(409).json({ 
+      message: 'Cannot delete or modify this record because it is currently linked to other data in the system (e.g. classes, students, or allocations).' 
+    });
+  }
   
   if (err.message && err.message.includes('Blocked by CORS')) {
     return res.status(403).json({ message: err.message });
