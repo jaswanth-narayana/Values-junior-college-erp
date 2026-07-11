@@ -1,4 +1,18 @@
-CREATE EXTENSION IF NOT EXISTS pgcrypto;CREATE TYPE user_role AS ENUM('super_admin','admin_staff','teacher','accountant');CREATE TYPE attendance_status AS ENUM('Present','Absent');CREATE TYPE complaint_status AS ENUM('Pending','Processing','Solved');CREATE SEQUENCE IF NOT EXISTS payments_receipt_seq START 1001;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
+    CREATE TYPE user_role AS ENUM('super_admin','admin_staff','teacher','accountant');
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'attendance_status') THEN
+    CREATE TYPE attendance_status AS ENUM('Present','Absent');
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'complaint_status') THEN
+    CREATE TYPE complaint_status AS ENUM('Pending','Processing','Solved');
+  END IF;
+END $$;
+
+CREATE SEQUENCE IF NOT EXISTS payments_receipt_seq START 1001;
 CREATE TABLE users(id UUID PRIMARY KEY DEFAULT gen_random_uuid(),username VARCHAR(60) UNIQUE NOT NULL,name VARCHAR(120) NOT NULL,email VARCHAR(160) UNIQUE NOT NULL,password_hash TEXT NOT NULL,role user_role NOT NULL,is_active BOOLEAN DEFAULT TRUE,created_at TIMESTAMPTZ DEFAULT NOW(),updated_at TIMESTAMPTZ DEFAULT NOW());
 CREATE TABLE academic_years(id UUID PRIMARY KEY DEFAULT gen_random_uuid(),name VARCHAR(30) UNIQUE NOT NULL,start_date DATE,end_date DATE,is_active BOOLEAN DEFAULT FALSE,created_at TIMESTAMPTZ DEFAULT NOW(),updated_at TIMESTAMPTZ DEFAULT NOW());
 CREATE TABLE classes(id UUID PRIMARY KEY DEFAULT gen_random_uuid(),name VARCHAR(80) NOT NULL,academic_year_id UUID REFERENCES academic_years(id),created_at TIMESTAMPTZ DEFAULT NOW(),updated_at TIMESTAMPTZ DEFAULT NOW());
