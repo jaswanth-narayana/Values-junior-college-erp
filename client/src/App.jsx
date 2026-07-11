@@ -1795,6 +1795,125 @@ function SettingsPage() {
   );
 }
 
+function ReportsPage() {
+  const [financialData, setFinancialData] = useState({
+    totalPaid: '₹0.00',
+    totalPending: '₹0.00',
+    totalAllocated: '₹0.00'
+  });
+  const [studentStats, setStudentStats] = useState({
+    total: 0,
+    boys: 0,
+    girls: 0
+  });
+
+  useEffect(() => {
+    apiCall('/dashboard')
+      .then(res => {
+        const fc = Number(res.feeCollection || 0);
+        const p = Number(res.pendingFees || 0);
+        setFinancialData({
+          totalPaid: `₹${fc.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+          totalPending: `₹${p.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+          totalAllocated: `₹${(fc + p).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+        });
+      })
+      .catch(console.error);
+
+    apiCall('/students')
+      .then(res => {
+        const list = res.data || [];
+        const total = list.length;
+        const boys = list.filter(s => s.gender === 'Male' || s.gender === 'M').length;
+        const girls = list.filter(s => s.gender === 'Female' || s.gender === 'F').length;
+        setStudentStats({ total, boys, girls });
+      })
+      .catch(console.error);
+  }, []);
+
+  const handleExportStudents = () => {
+    window.open(`${API_URL}/students/export?authorization=${getToken()}`, '_blank');
+  };
+
+  return (
+    <div>
+      <div className="mb-6">
+        <h2 className="text-2xl font-black text-navy">Analytical Reports</h2>
+        <p className="text-sm text-slate-500">Download Excel spreadsheets and view campus performance insights.</p>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Academic Reports Card */}
+        <div className="card p-6 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-sky-50 text-sky-600">
+              <GraduationCap size={20} />
+            </div>
+            <div>
+              <b className="block text-navy">Academic & Enrollment Reports</b>
+              <small className="text-slate-400 text-xs">Total student counts, demographics, and registration lists</small>
+            </div>
+          </div>
+          
+          <div className="bg-slate-50 p-4 rounded-xl space-y-2 text-sm text-slate-600">
+            <div className="flex justify-between">
+              <span>Total Students Enrolled:</span>
+              <strong className="text-navy">{studentStats.total}</strong>
+            </div>
+            <div className="flex justify-between">
+              <span>Male Students:</span>
+              <strong className="text-navy">{studentStats.boys}</strong>
+            </div>
+            <div className="flex justify-between">
+              <span>Female Students:</span>
+              <strong className="text-navy">{studentStats.girls}</strong>
+            </div>
+          </div>
+
+          <button onClick={handleExportStudents} className="btn w-full">
+            <Download size={16} className="mr-2 inline" /> Export Student Enrollment Register
+          </button>
+        </div>
+
+        {/* Financial Reports Card */}
+        <div className="card p-6 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-emerald-600">
+              <WalletCards size={20} />
+            </div>
+            <div>
+              <b className="block text-navy">Financial Ledger Reports</b>
+              <small className="text-slate-400 text-xs">Fee collection overview and pending balance registers</small>
+            </div>
+          </div>
+
+          <div className="bg-slate-50 p-4 rounded-xl space-y-2 text-sm text-slate-600">
+            <div className="flex justify-between">
+              <span>Total Fees Allocated:</span>
+              <strong className="text-navy">{financialData.totalAllocated}</strong>
+            </div>
+            <div className="flex justify-between">
+              <span>Total Fees Collected:</span>
+              <strong className="text-emerald-700">{financialData.totalPaid}</strong>
+            </div>
+            <div className="flex justify-between">
+              <span>Total Pending Fees:</span>
+              <strong className="text-amber-700">{financialData.totalPending}</strong>
+            </div>
+          </div>
+
+          <button 
+            onClick={() => window.open(`${API_URL}/payments/export?authorization=${getToken()}`, '_blank')}
+            className="btn w-full bg-emerald-600 hover:bg-emerald-700"
+          >
+            <Download size={16} className="mr-2 inline" /> Export Complete Payments Ledger
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [logged, setLogged] = useState(false);
   const [active, setActive] = useState('Dashboard');
@@ -1826,6 +1945,8 @@ export default function App() {
         <Dashboard setActive={setActive} />
       ) : active === 'Admin Settings' ? (
         <SettingsPage />
+      ) : active === 'Reports' ? (
+        <ReportsPage />
       ) : (
         <Module type={active} />
       )}

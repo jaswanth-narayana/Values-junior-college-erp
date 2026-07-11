@@ -699,6 +699,36 @@ app.get('/api/students/export', auth, async (req, res, next) => {
   }
 });
 
+// Payments Excel Export Ledger
+app.get('/api/payments/export', auth, async (req, res, next) => {
+  try {
+    const rows = await q(`
+      SELECT p.receipt_number, s.name as student_name, s.student_code, 
+             p.amount_paid, p.payment_mode, p.payment_date 
+      FROM payments p 
+      JOIN students s ON s.id = p.student_id 
+      ORDER BY p.payment_date DESC
+    `);
+    
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Payments Ledger');
+    
+    ws.columns = Object.keys(rows[0] || { receipt_number: '' }).map(k => ({
+      header: k.replaceAll('_', ' ').toUpperCase(),
+      key: k,
+      width: 22
+    }));
+    
+    ws.addRows(rows);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=values-payments-ledger.xlsx');
+    await wb.xlsx.write(res);
+    res.end();
+  } catch (e) {
+    next(e);
+  }
+});
+
 // Fee receipt PDF generation
 app.get('/api/payments/:id/receipt', auth, async (req, res, next) => {
   try {
