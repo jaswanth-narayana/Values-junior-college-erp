@@ -161,12 +161,12 @@ function ProfileModal({ close }) {
     setNotice('');
     setError('');
     try {
-      await updateProfile(username, password || null);
-      setNotice('Credentials updated successfully.');
+      const res = await updateProfile(username, password || null);
+      setNotice(res.message || 'Credentials updated successfully.');
       setTimeout(() => {
         close();
         window.location.reload();
-      }, 1000);
+      }, 2000);
     } catch (err) {
       setError(err.message || 'Failed to update credentials.');
     } finally {
