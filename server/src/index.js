@@ -476,7 +476,7 @@ for (const [name, [table, fields]] of Object.entries(resources)) {
 }
 
 // Student Excel Import
-app.post('/api/students/import', auth, allow('super_admin', 'admin_staff'), upload.single('file'), async (req, res, next) => {
+app.post('/api/students/import', auth, allow('super_admin', 'admin_staff', 'teacher'), upload.single('file'), async (req, res, next) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'Excel file required' });
     const wb = new ExcelJS.Workbook();

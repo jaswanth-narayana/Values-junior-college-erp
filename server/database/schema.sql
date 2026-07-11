@@ -19,3 +19,13 @@ CREATE TABLE complaints(id UUID PRIMARY KEY DEFAULT gen_random_uuid(),complaint_
 CREATE TABLE timetables(id UUID PRIMARY KEY DEFAULT gen_random_uuid(),class_id UUID REFERENCES classes(id) ON DELETE CASCADE,section_id UUID REFERENCES sections(id) ON DELETE CASCADE,subject_id UUID REFERENCES subjects(id) ON DELETE CASCADE,teacher_id UUID REFERENCES staff(id) ON DELETE SET NULL,day_of_week VARCHAR(20) NOT NULL,start_time TIME NOT NULL,end_time TIME NOT NULL,created_at TIMESTAMPTZ DEFAULT NOW(),updated_at TIMESTAMPTZ DEFAULT NOW(),UNIQUE(class_id,section_id,day_of_week,start_time));
 CREATE TABLE college_settings(id SMALLINT PRIMARY KEY DEFAULT 1 CHECK(id=1),college_name VARCHAR(160) NOT NULL DEFAULT'Values Junior College',address TEXT,phone VARCHAR(20),email VARCHAR(160),logo_url TEXT,updated_at TIMESTAMPTZ DEFAULT NOW());CREATE INDEX idx_students_class_section ON students(class_id,section_id);CREATE INDEX idx_attendance_date_student ON attendance(date,student_id);CREATE INDEX idx_payments_date_student ON payments(payment_date,student_id);CREATE INDEX idx_marks_exam_student ON marks(exam_id,student_id);
 INSERT INTO users(username,name,email,password_hash,role)VALUES('admin','Admin Staff','admin@values.edu',crypt('Admin@123',gen_salt('bf')),'super_admin')ON CONFLICT DO NOTHING;INSERT INTO college_settings(id,college_name,address,phone,email)VALUES(1,'Values Junior College','Hyderabad, Telangana, India','+91 40 2345 6789','office@values.edu')ON CONFLICT(id)DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS credential_change_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  requested_username VARCHAR(60),
+  requested_password_hash TEXT,
+  status VARCHAR(20) DEFAULT 'pending',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);

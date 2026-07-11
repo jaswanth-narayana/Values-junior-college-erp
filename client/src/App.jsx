@@ -680,7 +680,7 @@ function Module({ type }) {
   }, [rows, query]);
 
   const handleExport = () => {
-    window.open(`http://localhost:4000/api/${endpoint}/export?authorization=${getToken()}`, '_blank');
+    window.open(`${API_URL}/${endpoint}/export?authorization=${getToken()}`, '_blank');
   };
 
   const handleImport = async (e) => {
@@ -756,7 +756,7 @@ function Module({ type }) {
               <>
                 <button 
                   className="btn2 bg-sky-50 text-sky-700 border-sky-100 hover:bg-sky-100" 
-                  onClick={() => window.open(`http://localhost:4000/api/${endpoint}/import-template?authorization=${getToken()}`, '_blank')}
+                  onClick={() => window.open(`${API_URL}/${endpoint}/import-template?authorization=${getToken()}`, '_blank')}
                 >
                   <Download size={16} /> Download Template
                 </button>
