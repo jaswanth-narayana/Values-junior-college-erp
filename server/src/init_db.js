@@ -38,9 +38,9 @@ const runInit = async () => {
   }
 
   console.log(`🔌 Connecting to target database...`);
-  const isHosted = targetUrl.includes('render.com') || 
-                   targetUrl.includes('rlwy.net') || 
-                   (!targetUrl.includes('localhost') && !targetUrl.includes('127.0.0.1'));
+  isHosted = targetUrl.includes('render.com') || 
+             targetUrl.includes('rlwy.net') || 
+             (!targetUrl.includes('localhost') && !targetUrl.includes('127.0.0.1'));
 
   const targetPool = new pg.Pool({ 
     connectionString: targetUrl,
