@@ -38,7 +38,14 @@ const runInit = async () => {
   }
 
   console.log(`🔌 Connecting to target database...`);
-  const targetPool = new pg.Pool({ connectionString: targetUrl });
+  const isHosted = targetUrl.includes('render.com') || 
+                   targetUrl.includes('rlwy.net') || 
+                   (!targetUrl.includes('localhost') && !targetUrl.includes('127.0.0.1'));
+
+  const targetPool = new pg.Pool({ 
+    connectionString: targetUrl,
+    ssl: isHosted ? { rejectUnauthorized: false } : false
+  });
   
   try {
     const client = await targetPool.connect();

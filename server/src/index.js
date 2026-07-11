@@ -16,8 +16,14 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const connectionString = process.env.DATABASE_URL || '';
+const isHostedDb = connectionString.includes('render.com') || 
+                   connectionString.includes('rlwy.net') || 
+                   (connectionString && !connectionString.includes('localhost') && !connectionString.includes('127.0.0.1'));
+
 const db = new pg.Pool({
-  connectionString: process.env.DATABASE_URL
+  connectionString,
+  ssl: isHostedDb ? { rejectUnauthorized: false } : false
 });
 
 const q = async (t, p = []) => (await db.query(t, p)).rows;
