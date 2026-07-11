@@ -1,7 +1,22 @@
-export const API_URL = import.meta.env.VITE_API_URL || 
-  ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && window.location.port !== '4000'
-    ? 'http://localhost:4000/api' 
-    : '/api');
+const getApiUrl = () => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+  
+  const host = window.location.hostname;
+  const port = window.location.port;
+  
+  const isLocal = host === 'localhost' || 
+                  host === '127.0.0.1' || 
+                  host.startsWith('192.168.') || 
+                  host.startsWith('10.') || 
+                  host.startsWith('172.');
+                  
+  if (isLocal && port !== '4000') {
+    return `http://${host}:4000/api`;
+  }
+  return '/api';
+};
+
+export const API_URL = getApiUrl();
 const TOKEN_KEY = 'values_session_token';
 const USER_KEY = 'values_session_user';
 

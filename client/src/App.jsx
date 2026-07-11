@@ -27,8 +27,8 @@ const nav = [
 function Login({ go }) {
   const [show, setShow] = useState(false);
   const [forgot, setForgot] = useState(false);
-  const [email, setEmail] = useState('admin@values.edu');
-  const [password, setPassword] = useState('Admin@123');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
