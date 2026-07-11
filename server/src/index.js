@@ -27,6 +27,7 @@ const db = new pg.Pool({
 });
 
 const q = async (t, p = []) => (await db.query(t, p)).rows;
+const JWT_SECRET = process.env.JWT_SECRET || 'values_college_default_secret_key_change_in_production';
 
 const app = express();
 
@@ -75,7 +76,7 @@ const auth = (req, res, next) => {
       token = req.query.authorization || req.query.token;
     }
     if (!token) throw new Error('Missing token');
-    req.user = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = jwt.verify(token, JWT_SECRET);
     next();
   } catch (error) {
     return res.status(401).json({ message: 'Authentication required' });
@@ -104,7 +105,7 @@ app.post('/api/auth/login', async (req, res, next) => {
     
     const token = jwt.sign(
       { id: u.id, role: u.role, name: u.name }, 
-      process.env.JWT_SECRET, 
+      JWT_SECRET, 
       { expiresIn: process.env.JWT_EXPIRES_IN || '8h' }
     );
     
