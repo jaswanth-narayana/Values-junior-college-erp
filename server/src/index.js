@@ -300,7 +300,7 @@ app.get('/api/payments', auth, async (req, res, next) => {
     const offset = (page - 1) * limit;
     
     const data = await q(
-      `SELECT p.*, s.name as student_name, s.student_code,
+      `SELECT p.*, s.name as student_name, s.student_code, s.admission_number as admission_number,
               COALESCE(
                 (SELECT SUM(balance_amount) FROM student_fee_allocations WHERE student_id = p.student_id),
                 0
@@ -800,8 +800,8 @@ app.get('/api/payments/:id/receipt', auth, async (req, res, next) => {
     doc.font('Helvetica-Bold').text('Student Name:', leftMargin, startY + 16);
     doc.font('Helvetica').text(p.name, leftMargin + 110, startY + 16);
     
-    doc.font('Helvetica-Bold').text('Student ID (Code):', leftMargin, startY + 32);
-    doc.font('Helvetica').text(p.student_code || p.admission_number || '-', leftMargin + 110, startY + 32);
+    doc.font('Helvetica-Bold').text('Admission Number:', leftMargin, startY + 32);
+    doc.font('Helvetica').text(p.admission_number || '-', leftMargin + 110, startY + 32);
     
     doc.font('Helvetica-Bold').text('Payment Date:', leftMargin, startY + 48);
     doc.font('Helvetica').text(new Date(p.payment_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }), leftMargin + 110, startY + 48);

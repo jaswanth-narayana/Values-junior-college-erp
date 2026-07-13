@@ -538,7 +538,7 @@ const config = {
   'Fee Manager': [
     'Track payments and generate receipts.',
     'payments',
-    [['receipt_number', 'Receipt No.'], ['student_name', 'Student Name'], ['student_code', 'Student ID'], ['amount_paid', 'Amount Paid'], ['payment_mode', 'Mode'], ['payment_date', 'Date']]
+    [['receipt_number', 'Receipt No.'], ['student_name', 'Student Name'], ['admission_number', 'Admission No.'], ['amount_paid', 'Amount Paid'], ['payment_mode', 'Mode'], ['payment_date', 'Date']]
   ],
   'Exam Manager': [
     'Create exams, enter marks and publish report cards.',
@@ -647,7 +647,7 @@ function Module({ type }) {
   const endpoint = type === 'Fee Manager' ? 'payments' : config[type][1];
     
   const cols = type === 'Fee Manager'
-    ? [['receipt_number', 'Receipt No.'], ['student_name', 'Student Name'], ['student_code', 'Student ID'], ['amount_paid', 'Amount Paid'], ['pending_amount', 'Pending Fee (Balance)'], ['payment_mode', 'Mode'], ['payment_date', 'Date']]
+    ? [['receipt_number', 'Receipt No.'], ['student_name', 'Student Name'], ['admission_number', 'Admission No.'], ['amount_paid', 'Amount Paid'], ['pending_amount', 'Pending Fee (Balance)'], ['payment_mode', 'Mode'], ['payment_date', 'Date']]
     : config[type][2];
 
   const [rows, setRows] = useState([]);
@@ -943,7 +943,7 @@ function PaymentModal({ close, save }) {
               <option value="">Select Student</option>
               {filteredStudents.map(s => (
                 <option key={s.id} value={s.id}>
-                  {s.name} ({s.student_code || s.admission_number})
+                  {s.name} ({s.admission_number})
                 </option>
               ))}
             </select>
@@ -1096,7 +1096,7 @@ function AllocateFeeModal({ close, save }) {
               <option value="">Select Student</option>
               {filteredStudents.map(s => (
                 <option key={s.id} value={s.id}>
-                  {s.name} ({s.student_code || s.admission_number})
+                  {s.name} ({s.admission_number})
                 </option>
               ))}
             </select>
