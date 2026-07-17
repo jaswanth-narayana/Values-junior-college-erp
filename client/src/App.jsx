@@ -639,6 +639,266 @@ function Table({ cols, rows, onDelete }) {
   );
 }
 
+function StudentEditModal({ student, onClose, onSave }) {
+  const [name, setName] = useState(student.name || '');
+  const [admissionNumber, setAdmissionNumber] = useState(student.admission_number || '');
+  const [rollNumber, setRollNumber] = useState(student.roll_number || '');
+  const [gender, setGender] = useState(student.gender || 'Male');
+  const [mobile, setMobile] = useState(student.mobile || '');
+  const [email, setEmail] = useState(student.email || '');
+  const [fatherName, setFatherName] = useState(student.father_name || '');
+  const [motherName, setMotherName] = useState(student.mother_name || '');
+  const [parentMobile, setParentMobile] = useState(student.parent_mobile || '');
+  const [address, setAddress] = useState(student.address || '');
+
+  const [classId, setClassId] = useState(student.class_id || '');
+  const [sectionId, setSectionId] = useState(student.section_id || '');
+  
+  const [classesList, setClassesList] = useState([]);
+  const [sectionsList, setSectionsList] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    apiCall('/classes').then(res => setClassesList(res.data || [])).catch(console.error);
+    apiCall('/sections').then(res => setSectionsList(res.data || [])).catch(console.error);
+  }, []);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await apiCall(`/students/${student.id}`, 'PUT', {
+        name,
+        admission_number: admissionNumber,
+        roll_number: rollNumber,
+        gender,
+        mobile,
+        email,
+        class_id: classId || null,
+        section_id: sectionId || null,
+        father_name: fatherName,
+        mother_name: motherName,
+        parent_mobile: parentMobile,
+        address
+      });
+      alert('Student updated successfully.');
+      onSave();
+    } catch (err) {
+      alert(err.message || 'Failed to update student.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredSections = sectionsList.filter(s => s.class_id === classId);
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-navy/60 p-4">
+      <form onSubmit={handleSubmit} className="max-h-[90vh] w-full max-w-lg overflow-auto rounded-2xl bg-white p-6 space-y-4 text-left">
+        <div className="flex justify-between border-b pb-3">
+          <b className="text-lg text-navy">Edit Student Profile</b>
+          <button type="button" onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600"><X /></button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <label className="col-span-2 block">
+            <span className="mb-1 block text-xs font-semibold text-slate-600">Student Name *</span>
+            <input type="text" className="field" value={name} onChange={e => setName(e.target.value)} required />
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-slate-600">Admission Number *</span>
+            <input type="text" className="field" value={admissionNumber} onChange={e => setAdmissionNumber(e.target.value)} required />
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-slate-600">Roll Number</span>
+            <input type="text" className="field" value={rollNumber} onChange={e => setRollNumber(e.target.value)} />
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-slate-600">Class</span>
+            <select className="field" value={classId} onChange={e => { setClassId(e.target.value); setSectionId(''); }}>
+              <option value="">Select Class</option>
+              {classesList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-slate-600">Section</span>
+            <select className="field" value={sectionId} onChange={e => setSectionId(e.target.value)}>
+              <option value="">Select Section</option>
+              {filteredSections.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-slate-600">Gender</span>
+            <select className="field" value={gender} onChange={e => setGender(e.target.value)}>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-slate-600">Mobile</span>
+            <input type="text" className="field" value={mobile} onChange={e => setMobile(e.target.value)} />
+          </label>
+
+          <label className="col-span-2 block">
+            <span className="mb-1 block text-xs font-semibold text-slate-600">Email</span>
+            <input type="email" className="field" value={email} onChange={e => setEmail(e.target.value)} />
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-slate-600">Father's Name</span>
+            <input type="text" className="field" value={fatherName} onChange={e => setFatherName(e.target.value)} />
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-slate-600">Mother's Name</span>
+            <input type="text" className="field" value={motherName} onChange={e => setMotherName(e.target.value)} />
+          </label>
+
+          <label className="col-span-2 block">
+            <span className="mb-1 block text-xs font-semibold text-slate-600">Parent Mobile</span>
+            <input type="text" className="field" value={parentMobile} onChange={e => setParentMobile(e.target.value)} />
+          </label>
+
+          <label className="col-span-2 block">
+            <span className="mb-1 block text-xs font-semibold text-slate-600">Address</span>
+            <textarea className="field h-20 py-2 resize-none" value={address} onChange={e => setAddress(e.target.value)} />
+          </label>
+        </div>
+
+        <button className="btn w-full py-3" disabled={loading}>
+          {loading ? 'Saving Changes...' : 'Save Student Details'}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function StudentDetailsModal({ student, onClose }) {
+  const [allocations, setAllocations] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    apiCall('/student_fee_allocations')
+      .then(res => {
+        const list = res.data || [];
+        const filtered = list.filter(a => a.student_id === student.id);
+        setAllocations(filtered);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [student.id]);
+
+  const totalAllocated = allocations.reduce((sum, a) => sum + Number(a.total_amount || 0), 0);
+  const totalPaid = allocations.reduce((sum, a) => sum + Number(a.paid_amount || 0), 0);
+  const totalBalance = allocations.reduce((sum, a) => sum + Number(a.balance_amount || 0), 0);
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-navy/60 p-4">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-auto rounded-2xl bg-white p-6 space-y-6 text-left">
+        <div className="flex justify-between border-b pb-3">
+          <b className="text-lg text-navy">Student Information Hub</b>
+          <button type="button" onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600"><X /></button>
+        </div>
+
+        <div className="bg-slate-50 p-4 rounded-xl grid grid-cols-2 gap-4 text-sm text-slate-700">
+          <div className="col-span-2 border-b pb-2 mb-1">
+            <h4 className="text-base font-bold text-navy">{student.name}</h4>
+            <span className="text-xs text-slate-500">Class: {student.class_name || '-'} | Section: {student.section_name || '-'}</span>
+          </div>
+
+          <div>
+            <span className="block text-xs font-semibold text-slate-400">Admission Number</span>
+            <b>{student.admission_number || '-'}</b>
+          </div>
+          <div>
+            <span className="block text-xs font-semibold text-slate-400">Roll Number</span>
+            <b>{student.roll_number || '-'}</b>
+          </div>
+          <div>
+            <span className="block text-xs font-semibold text-slate-400">Gender</span>
+            <b>{student.gender || '-'}</b>
+          </div>
+          <div>
+            <span className="block text-xs font-semibold text-slate-400">Mobile</span>
+            <b>{student.mobile || '-'}</b>
+          </div>
+          <div className="col-span-2">
+            <span className="block text-xs font-semibold text-slate-400">Email</span>
+            <b>{student.email || '-'}</b>
+          </div>
+          <div>
+            <span className="block text-xs font-semibold text-slate-400">Father's Name</span>
+            <b>{student.father_name || '-'}</b>
+          </div>
+          <div>
+            <span className="block text-xs font-semibold text-slate-400">Mother's Name</span>
+            <b>{student.mother_name || '-'}</b>
+          </div>
+          <div>
+            <span className="block text-xs font-semibold text-slate-400">Parent Mobile</span>
+            <b>{student.parent_mobile || '-'}</b>
+          </div>
+          <div className="col-span-2">
+            <span className="block text-xs font-semibold text-slate-400">Address</span>
+            <b>{student.address || '-'}</b>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+            <h4 className="font-bold text-navy">Allocated Fees & Ledger Balance</h4>
+            <div className="text-xs space-x-3 bg-slate-50 px-3 py-1.5 rounded-lg border">
+              <span>Allocated: <b className="text-navy">₹{totalAllocated.toLocaleString()}</b></span>
+              <span>Paid: <b className="text-emerald-700">₹{totalPaid.toLocaleString()}</b></span>
+              <span>Balance: <b className="text-amber-700">₹{totalBalance.toLocaleString()}</b></span>
+            </div>
+          </div>
+
+          {loading ? (
+            <p className="text-sm text-slate-400 py-4 text-center">Fetching allocated fee structures...</p>
+          ) : allocations.length === 0 ? (
+            <p className="text-sm text-slate-400 py-4 text-center bg-slate-50 rounded-xl">No fee allocations found for this student.</p>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 text-slate-500 uppercase font-semibold">
+                  <tr>
+                    <th className="px-4 py-3">Fee Type / Structure</th>
+                    <th className="px-4 py-3">Total Amount</th>
+                    <th className="px-4 py-3">Amount Paid</th>
+                    <th className="px-4 py-3">Pending Balance</th>
+                    <th className="px-4 py-3">Due Date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {allocations.map(a => (
+                    <tr key={a.id} className="hover:bg-slate-50">
+                      <td className="px-4 py-3 font-semibold text-slate-700">{a.fee_type || 'Custom Allocation'}</td>
+                      <td className="px-4 py-3 text-slate-600">₹{Number(a.total_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                      <td className="px-4 py-3 text-emerald-700 font-semibold">₹{Number(a.paid_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                      <td className={`px-4 py-3 font-bold ${Number(a.balance_amount) > 0 ? 'text-amber-700' : 'text-slate-500'}`}>
+                        ₹{Number(a.balance_amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                      </td>
+                      <td className="px-4 py-3 text-slate-500">{a.due_date ? new Date(a.due_date).toLocaleDateString() : '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Module({ type }) {
   const desc = type === 'Fee Manager' 
     ? 'Track fee structures, allocations, payments and receipts.' 
@@ -651,7 +911,7 @@ function Module({ type }) {
     : config[type][2];
 
   const [rows, setRows] = useState([]);
-  const [modal, setModal] = useState(null); // null, 'add', 'payment', 'allocate'
+  const [modal, setModal] = useState(null); // null, 'add', 'payment', 'allocate', {type: 'edit', student}, {type: 'view', student}
   const [query, setQuery] = useState('');
   const [notice, setNotice] = useState('');
   const fileRef = useRef(null);
@@ -671,13 +931,6 @@ function Module({ type }) {
     setNotice('');
     setModal(null);
   }, [type]);
-
-  const filteredRows = useMemo(() => {
-    const text = query.trim().toLowerCase();
-    return text ? rows.filter(r => 
-      Object.values(r).some(v => String(v || '').toLowerCase().includes(text))
-    ) : rows;
-  }, [rows, query]);
 
   const handleExport = () => {
     window.open(`${API_URL}/${endpoint}/export?authorization=${getToken()}`, '_blank');
@@ -707,6 +960,21 @@ function Module({ type }) {
       setNotice('Failed to delete: ' + err.message);
     }
   };
+
+  const handleEdit = (student) => {
+    setModal({ type: 'edit', student });
+  };
+
+  const handleView = (student) => {
+    setModal({ type: 'view', student });
+  };
+
+  const filteredRows = useMemo(() => {
+    const text = query.trim().toLowerCase();
+    return text ? rows.filter(r => 
+      Object.values(r).some(v => String(v || '').toLowerCase().includes(text))
+    ) : rows;
+  }, [rows, query]);
 
   return (
     <>
@@ -779,7 +1047,13 @@ function Module({ type }) {
           </div>
         )}
 
-        <Table cols={cols} rows={filteredRows} onDelete={handleDelete} />
+        <Table 
+          cols={cols} 
+          rows={filteredRows} 
+          onDelete={handleDelete} 
+          onEdit={type === 'Students' ? handleEdit : null}
+          onView={type === 'Students' ? handleView : null}
+        />
       </div>
 
       {modal === 'payment' && (
@@ -827,6 +1101,19 @@ function Module({ type }) {
               alert('Save failed: ' + err.message);
             }
           }} 
+        />
+      )}
+      {modal?.type === 'edit' && (
+        <StudentEditModal 
+          student={modal.student} 
+          onClose={() => setModal(null)} 
+          onSave={() => { setModal(null); fetchRows(); }} 
+        />
+      )}
+      {modal?.type === 'view' && (
+        <StudentDetailsModal 
+          student={modal.student} 
+          onClose={() => setModal(null)} 
         />
       )}
     </>
