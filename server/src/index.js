@@ -87,17 +87,41 @@ const allow = (...roles) => (req, res, next) =>
   roles.includes(req.user.role) ? next() : res.status(403).json({ message: 'Insufficient permissions' });
 
 // Health Check
-app.get('/api/health', (_, res) => res.json({ status: 'ok', service: 'Values Junior College ERP API' }));
+app.get('/api/health', async (_, res) => {
+  try {
+    const dbCheck = await q('SELECT 1 as alive');
+    res.json({ 
+      status: 'ok', 
+      service: 'Values Junior College ERP API',
+      database: dbCheck.length > 0 ? 'connected' : 'no_response'
+    });
+  } catch (err) {
+    res.status(500).json({ 
+      status: 'error', 
+      database: 'disconnected', 
+      error: err.message,
+      hint: 'Please check DATABASE_URL in Render Dashboard Environment variables.'
+    });
+  }
+});
 
 // Login Endpoint
 app.post('/api/auth/login', async (req, res, next) => {
   try {
     const body = z.object({
       email: z.string().min(3),
-      password: z.string().min(8)
+      password: z.string().min(1, 'Password is required')
     }).parse(req.body);
     
-    const u = (await q('SELECT * FROM users WHERE email=$1 OR username=$1 LIMIT 1', [body.email.toLowerCase()]))[0];
+    let u;
+    try {
+      u = (await q('SELECT * FROM users WHERE email=$1 OR username=$1 LIMIT 1', [body.email.toLowerCase()]))[0];
+    } catch (dbErr) {
+      console.error('Database Query Error during login:', dbErr);
+      return res.status(500).json({
+        message: 'Database connection failed. Please ensure the DATABASE_URL environment variable is configured in your Render Web Service dashboard.'
+      });
+    }
     
     if (!u?.is_active || !(await bcrypt.compare(body.password, u.password_hash))) {
       return res.status(401).json({ message: 'Invalid credentials' });
@@ -887,6 +911,12 @@ app.use((err, req, res, next) => {
   
   if (err.message && err.message.includes('Blocked by CORS')) {
     return res.status(403).json({ message: err.message });
+  }
+
+  if (err.code === 'ECONNREFUSED' || err.message?.includes('connect ECONNREFUSED') || err.message?.includes('password authentication failed') || err.message?.includes('Connection terminated')) {
+    return res.status(500).json({ 
+      message: 'Database connection offline. Please check DATABASE_URL in your Render Web Service Environment settings.' 
+    });
   }
 
   // Strong security policy: generic error response, no server details
