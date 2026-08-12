@@ -528,7 +528,7 @@ const config = {
   Students: [
     'Manage admissions, profiles and academic details.',
     'students',
-    [['admission_number', 'Admission No.'], ['roll_number', 'Roll No.'], ['name', 'Student Name'], ['class_name', 'Class'], ['section_name', 'Section'], ['gender', 'Gender'], ['mobile', 'Mobile'], ['email', 'Email']]
+    [['admission_number', 'Admission No.'], ['name', 'Student Name'], ['class_name', 'Class'], ['section_name', 'Section'], ['gender', 'Gender'], ['mobile', 'Mobile'], ['email', 'Email']]
   ],
   Staff: [
     'Manage faculty, departments and login access.',
@@ -642,7 +642,6 @@ function Table({ cols, rows, onDelete }) {
 function StudentEditModal({ student, onClose, onSave }) {
   const [name, setName] = useState(student.name || '');
   const [admissionNumber, setAdmissionNumber] = useState(student.admission_number || '');
-  const [rollNumber, setRollNumber] = useState(student.roll_number || '');
   const [gender, setGender] = useState(student.gender || 'Male');
   const [mobile, setMobile] = useState(student.mobile || '');
   const [email, setEmail] = useState(student.email || '');
@@ -670,7 +669,6 @@ function StudentEditModal({ student, onClose, onSave }) {
       await apiCall(`/students/${student.id}`, 'PUT', {
         name,
         admission_number: admissionNumber,
-        roll_number: rollNumber,
         gender,
         mobile,
         email,
@@ -706,14 +704,9 @@ function StudentEditModal({ student, onClose, onSave }) {
             <input type="text" className="field" value={name} onChange={e => setName(e.target.value)} required />
           </label>
 
-          <label className="block">
+          <label className="col-span-2 block">
             <span className="mb-1 block text-xs font-semibold text-slate-600">Admission Number *</span>
             <input type="text" className="field" value={admissionNumber} onChange={e => setAdmissionNumber(e.target.value)} required />
-          </label>
-
-          <label className="block">
-            <span className="mb-1 block text-xs font-semibold text-slate-600">Roll Number</span>
-            <input type="text" className="field" value={rollNumber} onChange={e => setRollNumber(e.target.value)} />
           </label>
 
           <label className="block">
@@ -813,13 +806,9 @@ function StudentDetailsModal({ student, onClose }) {
             <span className="text-xs text-slate-500">Class: {student.class_name || '-'} | Section: {student.section_name || '-'}</span>
           </div>
 
-          <div>
+          <div className="col-span-2">
             <span className="block text-xs font-semibold text-slate-400">Admission Number</span>
             <b>{student.admission_number || '-'}</b>
-          </div>
-          <div>
-            <span className="block text-xs font-semibold text-slate-400">Roll Number</span>
-            <b>{student.roll_number || '-'}</b>
           </div>
           <div>
             <span className="block text-xs font-semibold text-slate-400">Gender</span>

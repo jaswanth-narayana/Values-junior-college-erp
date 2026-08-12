@@ -548,16 +548,15 @@ app.post('/api/students/import', auth, allow('super_admin', 'admin_staff', 'teac
       
       const name = getCellString(row.getCell(1).value, 140);
       const admission = getCellString(row.getCell(2).value, 50);
-      const roll = getCellString(row.getCell(3).value, 30);
-      const className = getCellString(row.getCell(4).value, 80);
-      const section = getCellString(row.getCell(5).value, 30);
-      const gender = getCellString(row.getCell(6).value, 20);
-      const mobile = getCellString(row.getCell(7).value, 20);
-      const email = getCellString(row.getCell(8).value, 160);
-      const father = getCellString(row.getCell(9).value, 120);
-      const mother = getCellString(row.getCell(10).value, 120);
-      const parentMobile = getCellString(row.getCell(11).value, 20);
-      const address = getCellString(row.getCell(12).value);
+      const className = getCellString(row.getCell(3).value, 80);
+      const section = getCellString(row.getCell(4).value, 30);
+      const gender = getCellString(row.getCell(5).value, 20);
+      const mobile = getCellString(row.getCell(6).value, 20);
+      const email = getCellString(row.getCell(7).value, 160);
+      const father = getCellString(row.getCell(8).value, 120);
+      const mother = getCellString(row.getCell(9).value, 120);
+      const parentMobile = getCellString(row.getCell(10).value, 20);
+      const address = getCellString(row.getCell(11).value);
       
       if (!name || !admission) continue;
 
@@ -581,10 +580,10 @@ app.post('/api/students/import', auth, allow('super_admin', 'admin_staff', 'teac
       }
       
       await q(
-        `INSERT INTO students(name, admission_number, roll_number, gender, mobile, email, class_id, section_id, father_name, mother_name, parent_mobile, address) 
-         VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
+        `INSERT INTO students(name, admission_number, gender, mobile, email, class_id, section_id, father_name, mother_name, parent_mobile, address) 
+         VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
          ON CONFLICT(admission_number) DO NOTHING`,
-        [name, admission, roll, gender, mobile, email, classId, sectionId, father, mother, parentMobile, address || (className + ' / ' + section)]
+        [name, admission, gender, mobile, email, classId, sectionId, father, mother, parentMobile, address || (className + ' / ' + section)]
       );
       imported++;
     }
@@ -660,7 +659,6 @@ app.get('/api/students/import-template', auth, async (req, res, next) => {
     ws.columns = [
       { header: 'Name', key: 'name', width: 20 },
       { header: 'Admission Number', key: 'admission', width: 18 },
-      { header: 'Roll Number', key: 'roll', width: 12 },
       { header: 'Class', key: 'className', width: 15 },
       { header: 'Section', key: 'section', width: 10 },
       { header: 'Gender', key: 'gender', width: 12 },
@@ -675,7 +673,6 @@ app.get('/api/students/import-template', auth, async (req, res, next) => {
     ws.addRow({
       name: 'Aarav Sharma',
       admission: 'ADM26001',
-      roll: '101',
       className: 'Junior Inter',
       section: 'A',
       gender: 'Male',
@@ -738,7 +735,7 @@ app.get('/api/staff/import-template', auth, async (req, res, next) => {
 // Student Excel Export
 app.get('/api/students/export', auth, async (req, res, next) => {
   try {
-    const rows = await q('SELECT student_code, name, admission_number, roll_number, mobile, parent_mobile, address FROM students ORDER BY name');
+    const rows = await q('SELECT student_code, name, admission_number, mobile, parent_mobile, address FROM students ORDER BY name');
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet('Students');
     
