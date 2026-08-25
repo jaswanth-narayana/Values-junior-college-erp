@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Settings, GraduationCap, Users, WalletCards, ClipboardCheck, 
   CalendarCheck, Bus, MessageSquareText, ShieldAlert, BarChart3, Bell, Menu, X, 
   Plus, Search, Download, Upload, IndianRupee, ChevronDown, LockKeyhole, Mail, 
-  Eye, EyeOff, UserPlus, Receipt, BellRing, MoreHorizontal, Calendar, Trash2, Printer 
+  Eye, EyeOff, UserPlus, Receipt, BellRing, MoreHorizontal, Calendar, Trash2, Printer, Pencil, MapPin 
 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
 import { apiCall, apiUpload, login, logout, getUser, getToken, updateProfile, API_URL } from './api';
@@ -567,10 +567,10 @@ const config = {
   ]
 };
 
-function Table({ cols, rows, onDelete }) {
+function Table({ cols, rows, onDelete, onEdit, onView, onTrack }) {
   const user = getUser() || { role: 'super_admin' };
   const canDelete = user.role === 'super_admin' || user.role === 'admin_staff';
-  const hasActions = canDelete || rows.some(r => r.receipt_number);
+  const hasActions = canDelete || rows.some(r => r.receipt_number) || onEdit || onView || onTrack;
 
   return (
     <div className="overflow-x-auto">
@@ -607,6 +607,33 @@ function Table({ cols, rows, onDelete }) {
                 {hasActions && (
                   <td className="px-5 py-4 text-right whitespace-nowrap">
                     <div className="flex justify-end items-center gap-3">
+                      {onTrack && (
+                        <button 
+                          onClick={() => onTrack(r)} 
+                          className="text-emerald-600 hover:text-emerald-800 p-1 inline-flex items-center"
+                          title="Track Live Bus Location"
+                        >
+                          <MapPin size={16} />
+                        </button>
+                      )}
+                      {onView && (
+                        <button 
+                          onClick={() => onView(r)} 
+                          className="text-slate-600 hover:text-slate-800 p-1 inline-flex items-center"
+                          title="View Student details & allocations"
+                        >
+                          <Eye size={16} />
+                        </button>
+                      )}
+                      {onEdit && (
+                        <button 
+                          onClick={() => onEdit(r)} 
+                          className="text-sky-600 hover:text-sky-800 p-1 inline-flex items-center"
+                          title="Edit Student"
+                        >
+                          <Pencil size={16} />
+                        </button>
+                      )}
                       {r.receipt_number && (
                         <a 
                           href={`${API_URL}/payments/${r.id}/receipt?authorization=${getToken()}`}
@@ -958,6 +985,10 @@ function Module({ type }) {
     setModal({ type: 'view', student });
   };
 
+  const handleTrack = (bus) => {
+    setModal({ type: 'track', bus });
+  };
+
   const filteredRows = useMemo(() => {
     const text = query.trim().toLowerCase();
     return text ? rows.filter(r => 
@@ -1042,6 +1073,7 @@ function Module({ type }) {
           onDelete={handleDelete} 
           onEdit={type === 'Students' ? handleEdit : null}
           onView={type === 'Students' ? handleView : null}
+          onTrack={type === 'Transport' ? handleTrack : null}
         />
       </div>
 
@@ -1105,7 +1137,173 @@ function Module({ type }) {
           onClose={() => setModal(null)} 
         />
       )}
+      {modal?.type === 'track' && (
+        <BusTrackingModal 
+          bus={modal.bus} 
+          onClose={() => setModal(null)} 
+        />
+      )}
     </>
+  );
+}
+
+function BusTrackingModal({ bus, onClose }) {
+  const [progress, setProgress] = useState(25);
+  const [speed, setSpeed] = useState(38);
+  const [nextStopIndex, setNextStopIndex] = useState(1);
+  const [status, setStatus] = useState('On Time');
+
+  const stopsList = useMemo(() => {
+    if (!bus.stops) return ['Main Terminal', 'Stop A', 'Stop B', 'College'];
+    return bus.stops.split(',').map(s => s.trim()).filter(Boolean);
+  }, [bus.stops]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(timer);
+          setStatus('Arrived');
+          setSpeed(0);
+          return 100;
+        }
+        const nextProg = prev + 5;
+        const stopRatio = 100 / (stopsList.length - 1 || 1);
+        const nextIndex = Math.min(
+          stopsList.length - 1,
+          Math.floor(nextProg / stopRatio) + 1
+        );
+        setNextStopIndex(nextIndex);
+        setSpeed(Math.floor(Math.random() * 15) + 30);
+        return nextProg;
+      });
+    }, 4000);
+
+    return () => clearInterval(timer);
+  }, [stopsList]);
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-navy/60 p-4">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-auto rounded-2xl bg-white p-6 space-y-6 text-left">
+        <div className="flex justify-between border-b pb-3">
+          <div className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-ping" />
+            <b className="text-lg text-navy">Live Bus Tracker: {bus.bus_number}</b>
+          </div>
+          <button type="button" onClick={onClose} className="p-1 text-slate-400 hover:text-slate-600"><X /></button>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-slate-50 p-3 rounded-xl border">
+            <span className="block text-slate-400 text-xs font-semibold">STATUS</span>
+            <b className={`text-sm ${status === 'Arrived' ? 'text-emerald-600' : 'text-sky-600'}`}>{status}</b>
+          </div>
+          <div className="bg-slate-50 p-3 rounded-xl border">
+            <span className="block text-slate-400 text-xs font-semibold">SPEED</span>
+            <b className="text-sm text-navy">{speed} km/h</b>
+          </div>
+          <div className="bg-slate-50 p-3 rounded-xl border">
+            <span className="block text-slate-400 text-xs font-semibold">NEXT STOP</span>
+            <b className="text-sm text-navy truncate block">{stopsList[nextStopIndex] || 'College'}</b>
+          </div>
+          <div className="bg-slate-50 p-3 rounded-xl border">
+            <span className="block text-slate-400 text-xs font-semibold">EST. ARRIVAL</span>
+            <b className="text-sm text-navy">
+              {status === 'Arrived' ? 'Now' : '15 mins'}
+            </b>
+          </div>
+        </div>
+
+        <div className="relative h-48 w-full rounded-2xl bg-slate-100 overflow-hidden border">
+          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#071b35_1.5px,transparent_1.5px)] [background-size:24px_24px]" />
+          
+          <svg className="absolute inset-0 h-full w-full" xmlns="http://www.w3.org/2000/svg">
+            <path 
+              d="M 50 110 C 150 110, 200 40, 320 40 S 450 150, 580 110" 
+              fill="none" 
+              stroke="#cbd5e1" 
+              strokeWidth="10" 
+              strokeLinecap="round"
+            />
+            <path 
+              d="M 50 110 C 150 110, 200 40, 320 40 S 450 150, 580 110" 
+              fill="none" 
+              stroke="#0ea5e9" 
+              strokeWidth="6" 
+              strokeDasharray="600"
+              strokeDashoffset={600 - (600 * progress / 100)}
+              strokeLinecap="round"
+            />
+          </svg>
+
+          <div 
+            className="absolute top-1/2 left-0 h-8 w-8 -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-600 grid place-items-center text-white shadow-lg transition-all duration-1000 ease-out"
+            style={{
+              left: `${50 + (progress * 5.3)}px`,
+              top: `${110 - (Math.sin((progress / 100) * Math.PI * 2) * 50)}px`
+            }}
+          >
+            <Bus size={16} />
+          </div>
+
+          <div className="absolute top-3 left-3 bg-white/90 backdrop-blur px-2.5 py-1 rounded-lg border text-[10px] font-bold text-slate-500 shadow-sm flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-ping" />
+            GPS ACTIVE
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h4 className="font-bold text-navy text-sm">Route Progress & Stops</h4>
+          <div className="relative flex justify-between items-center py-4 px-2">
+            <div className="absolute left-0 right-0 h-1 bg-slate-200 top-1/2 -translate-y-1/2" />
+            <div 
+              className="absolute left-0 h-1 bg-sky-500 top-1/2 -translate-y-1/2 transition-all duration-1000"
+              style={{ width: `${progress}%` }}
+            />
+            
+            {stopsList.map((stop, index) => {
+              const stopRatio = 100 / (stopsList.length - 1 || 1);
+              const isActive = progress >= index * stopRatio;
+              return (
+                <div key={stop} className="relative z-10 flex flex-col items-center">
+                  <div 
+                    className={`h-5 w-5 rounded-full border-2 grid place-items-center text-[10px] font-bold transition-all duration-300 ${
+                      isActive 
+                        ? 'border-sky-500 bg-sky-500 text-white' 
+                        : 'border-slate-300 bg-white text-slate-400'
+                    }`}
+                  >
+                    {index + 1}
+                  </div>
+                  <span className="absolute top-7 text-[10px] font-medium text-slate-500 whitespace-nowrap text-center">
+                    {stop}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="border-t pt-4 flex justify-between items-center gap-4 text-sm text-slate-700">
+          <div>
+            <span className="block text-slate-400 text-xs font-semibold">DRIVER NAME</span>
+            <b>{bus.driver_name || 'Not Assigned'}</b>
+          </div>
+          <div>
+            <span className="block text-slate-400 text-xs font-semibold">CONTACT MOBILE</span>
+            <b>{bus.driver_mobile || '-'}</b>
+          </div>
+          <button 
+            type="button" 
+            onClick={() => alert(`Calling driver ${bus.driver_name} at ${bus.driver_mobile}...`)}
+            className="btn2 px-4 py-2 border-slate-200 hover:bg-slate-50"
+            disabled={!bus.driver_mobile}
+          >
+            Call Driver
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
