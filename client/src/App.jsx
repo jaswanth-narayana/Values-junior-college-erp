@@ -1148,10 +1148,11 @@ function Module({ type }) {
 }
 
 function BusTrackingModal({ bus, onClose }) {
-  const [progress, setProgress] = useState(25);
-  const [speed, setSpeed] = useState(38);
+  const [progress, setProgress] = useState(20);
+  const [speed, setSpeed] = useState(35);
   const [nextStopIndex, setNextStopIndex] = useState(1);
   const [status, setStatus] = useState('On Time');
+  const [pauseTicks, setPauseTicks] = useState(0);
 
   const stopsList = useMemo(() => {
     if (!bus.stops) return ['Main Terminal', 'Stop A', 'Stop B', 'College'];
@@ -1159,7 +1160,16 @@ function BusTrackingModal({ bus, onClose }) {
   }, [bus.stops]);
 
   useEffect(() => {
+    const stopRatio = 100 / (stopsList.length - 1 || 1);
+
     const timer = setInterval(() => {
+      if (pauseTicks > 0) {
+        setPauseTicks(prev => prev - 1);
+        setSpeed(0);
+        setStatus('Boarding Passengers');
+        return;
+      }
+
       setProgress(prev => {
         if (prev >= 100) {
           clearInterval(timer);
@@ -1167,20 +1177,36 @@ function BusTrackingModal({ bus, onClose }) {
           setSpeed(0);
           return 100;
         }
-        const nextProg = prev + 5;
-        const stopRatio = 100 / (stopsList.length - 1 || 1);
+
+        const nextProg = prev + 1;
         const nextIndex = Math.min(
           stopsList.length - 1,
           Math.floor(nextProg / stopRatio) + 1
         );
         setNextStopIndex(nextIndex);
-        setSpeed(Math.floor(Math.random() * 15) + 30);
+
+        const currentStopIndex = Math.floor(nextProg / stopRatio);
+        const reachedStopVal = currentStopIndex * stopRatio;
+        
+        if (Math.abs(nextProg - reachedStopVal) < 0.1 && currentStopIndex > 0 && currentStopIndex < stopsList.length) {
+          setPauseTicks(3);
+          setSpeed(0);
+          return nextProg;
+        }
+
+        setStatus('On Time');
+        setSpeed(s => {
+          const delta = Math.floor(Math.random() * 5) - 2;
+          const nextSpeed = Math.max(15, Math.min(55, s + delta));
+          return Math.floor(nextSpeed);
+        });
+
         return nextProg;
       });
-    }, 4000);
+    }, 1000);
 
     return () => clearInterval(timer);
-  }, [stopsList]);
+  }, [stopsList, pauseTicks]);
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-navy/60 p-4">
