@@ -543,7 +543,7 @@ const config = {
   'Exam Manager': [
     'Create exams, enter marks and publish report cards.',
     'exams',
-    [['name', 'Exam Name'], ['exam_date', 'Exam Date'], ['maximum_marks', 'Max Marks']]
+    [['name', 'Exam Name'], ['class_name', 'Class'], ['subject_name', 'Subject'], ['maximum_marks', 'Max Marks'], ['exam_date', 'Exam Date']]
   ],
   Attendance: [
     'Record daily attendance and analyze presence.',
@@ -1107,7 +1107,22 @@ function Module({ type }) {
           }}
         />
       )}
-      {modal === 'add' && (
+      {modal === 'add' && type === 'Exam Manager' && (
+        <ExamAddModal
+          close={() => setModal(null)}
+          save={async (record) => {
+            try {
+              await apiCall('/exams', 'POST', record);
+              setNotice('Exam created successfully.');
+              setModal(null);
+              fetchRows();
+            } catch (err) {
+              alert('Failed to save exam: ' + err.message);
+            }
+          }}
+        />
+      )}
+      {modal === 'add' && type !== 'Exam Manager' && (
         <Modal 
           title={'Add ' + type} 
           cols={cols} 
@@ -1329,6 +1344,93 @@ function BusTrackingModal({ bus, onClose }) {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function ExamAddModal({ close, save }) {
+  const [name, setName] = useState('');
+  const [classId, setClassId] = useState('');
+  const [subjectId, setSubjectId] = useState('');
+  const [maxMarks, setMaxMarks] = useState('');
+  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+
+  const [classesList, setClassesList] = useState([]);
+  const [subjectsList, setSubjectsList] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    apiCall('/classes').then(res => setClassesList(res.data || [])).catch(console.error);
+    apiCall('/subjects').then(res => setSubjectsList(res.data || [])).catch(console.error);
+  }, []);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!classId || !subjectId) {
+      alert('Please select a class and a subject.');
+      return;
+    }
+    setLoading(true);
+    try {
+      await save({
+        name,
+        class_id: classId,
+        subject_id: subjectId,
+        maximum_marks: Number(maxMarks),
+        exam_date: date
+      });
+    } catch (err) {
+      alert(err.message || 'Failed to create exam.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-navy/60 p-4">
+      <form onSubmit={handleSubmit} className="max-h-[90vh] w-full max-w-md overflow-auto rounded-2xl bg-white p-6 space-y-4 text-left">
+        <div className="flex justify-between border-b pb-3">
+          <b className="text-lg text-navy">Add New Exam</b>
+          <button type="button" onClick={close} className="p-1 text-slate-400 hover:text-slate-600"><X /></button>
+        </div>
+
+        <div className="space-y-4">
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-slate-600">Exam Name *</span>
+            <input type="text" className="field" placeholder="e.g. Midterm Exams, Unit Test 1" value={name} onChange={e => setName(e.target.value)} required />
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-slate-600">Class *</span>
+            <select className="field" value={classId} onChange={e => setClassId(e.target.value)} required>
+              <option value="">Select Class</option>
+              {classesList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-slate-600">Subject *</span>
+            <select className="field" value={subjectId} onChange={e => setSubjectId(e.target.value)} required>
+              <option value="">Select Subject</option>
+              {subjectsList.map(s => <option key={s.id} value={s.id}>{s.name} ({s.code || ''})</option>)}
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-slate-600">Maximum Marks *</span>
+            <input type="number" className="field" placeholder="e.g. 100" value={maxMarks} onChange={e => setMaxMarks(e.target.value)} required />
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-slate-600">Exam Date *</span>
+            <input type="date" className="field" value={date} onChange={e => setDate(e.target.value)} required />
+          </label>
+        </div>
+
+        <button className="btn w-full py-3" disabled={loading}>
+          {loading ? 'Creating Exam...' : 'Create Exam'}
+        </button>
+      </form>
     </div>
   );
 }

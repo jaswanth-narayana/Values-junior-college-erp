@@ -499,6 +499,28 @@ for (const [name, [table, fields]] of Object.entries(resources)) {
   });
 }
 
+// Special override endpoint for exams to include Class & Subject names
+app.get('/api/exams', auth, async (req, res, next) => {
+  try {
+    const page = Math.max(1, +req.query.page || 1);
+    const limit = Math.min(1000, +req.query.limit || 100);
+    const offset = (page - 1) * limit;
+    
+    const data = await q(
+      `SELECT e.*, c.name as class_name, sub.name as subject_name 
+       FROM exams e 
+       LEFT JOIN classes c ON c.id = e.class_id 
+       LEFT JOIN subjects sub ON sub.id = e.subject_id 
+       ORDER BY e.created_at DESC 
+       LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    );
+    res.json({ data, page, limit });
+  } catch (e) {
+    next(e);
+  }
+});
+
 // Special override endpoint for students to include Class & Section names
 app.get('/api/students', auth, async (req, res, next) => {
   try {
