@@ -428,10 +428,10 @@ function Dashboard({ setActive }) {
         setStatsData({
           students: res.students?.toString() || '0',
           staff: res.staff?.toString() || '0',
-          feeCollection: `₹${(res.feeCollection / 100000).toFixed(1)}L`,
-          pendingFees: `₹${(res.pendingFees / 100000).toFixed(1)}L`,
-          attendance: '94.2%', // Mocked or static average
-          messages: '8', // Mocked or counted
+          feeCollection: `₹${Number(res.feeCollection || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+          pendingFees: `₹${Number(res.pendingFees || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+          attendance: '94.2%', 
+          messages: '8', 
           complaints: res.complaints?.toString() || '0'
         });
       })
