@@ -278,7 +278,7 @@ function Shell({ active, setActive, children }) {
       return n === 'Dashboard' || n === 'Fee Manager';
     }
     if (user.role === 'teacher') {
-      return n !== 'Admin Settings' && n !== 'Fee Manager';
+      return n !== 'Admin Settings' && n !== 'Fee Manager' && n !== 'Communication' && n !== 'Reports' && n !== 'Staff' && n !== 'Complaints';
     }
     return true;
   });
@@ -448,7 +448,9 @@ function Dashboard({ setActive }) {
   ].filter(([,,,, p]) => {
     if (user.role === 'super_admin') return true;
     if (user.role === 'accountant') return p === 'Fee Manager';
-    if (user.role === 'teacher') return p !== 'Fee Manager';
+    if (user.role === 'teacher') {
+      return p !== 'Fee Manager' && p !== 'Staff' && p !== 'Complaints';
+    }
     return true;
   });
 
@@ -460,7 +462,9 @@ function Dashboard({ setActive }) {
   ].filter(([,, p]) => {
     if (user.role === 'super_admin') return true;
     if (user.role === 'accountant') return p === 'Fee Manager';
-    if (user.role === 'teacher') return p !== 'Fee Manager';
+    if (user.role === 'teacher') {
+      return p !== 'Fee Manager' && p !== 'Communication';
+    }
     return true;
   });
 
