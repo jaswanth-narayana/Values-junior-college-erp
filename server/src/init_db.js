@@ -61,13 +61,13 @@ const runInit = async () => {
     // Insert default fee structures if table is empty
     const feesCheck = await client.query("SELECT COUNT(*)::int count FROM fees");
     if (feesCheck.rows[0].count === 0) {
-      console.log('📝 Inserting default fee structures...');
       await client.query(`
         INSERT INTO fees(fee_type, amount) VALUES
         ('Tuition Fee', 45000.00),
         ('Admission Fee', 10000.00),
         ('Exam Fee', 2500.00),
-        ('Library & Lab Fee', 5000.00)
+        ('Library & Lab Fee', 5000.00),
+        ('Transport Fee', 12000.00)
       `);
       console.log('✅ Default fee structures inserted.');
     }

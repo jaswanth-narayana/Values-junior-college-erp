@@ -2418,10 +2418,15 @@ function ReportsPage() {
       .then(res => {
         const fc = Number(res.feeCollection || 0);
         const p = Number(res.pendingFees || 0);
+        const tfc = Number(res.transportFeeCollection || 0);
+        const tfp = Number(res.transportFeePending || 0);
         setFinancialData({
           totalPaid: `₹${fc.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
           totalPending: `₹${p.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
-          totalAllocated: `₹${(fc + p).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
+          totalAllocated: `₹${(fc + p).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+          transportPaid: `₹${tfc.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+          transportPending: `₹${tfp.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`,
+          transportAllocated: `₹${(tfc + tfp).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
         });
       })
       .catch(console.error);
@@ -2494,6 +2499,7 @@ function ReportsPage() {
           </div>
 
           <div className="bg-slate-50 p-4 rounded-xl space-y-2 text-sm text-slate-600">
+            <div className="border-b pb-2 mb-2 font-bold text-navy">General College Fees</div>
             <div className="flex justify-between">
               <span>Total Fees Allocated:</span>
               <strong className="text-navy">{financialData.totalAllocated}</strong>
@@ -2502,9 +2508,23 @@ function ReportsPage() {
               <span>Total Fees Collected:</span>
               <strong className="text-emerald-700">{financialData.totalPaid}</strong>
             </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between border-b pb-3 mb-2">
               <span>Total Pending Fees:</span>
               <strong className="text-amber-700">{financialData.totalPending}</strong>
+            </div>
+
+            <div className="font-bold text-navy">Transport / Bus Fees</div>
+            <div className="flex justify-between">
+              <span>Total Allocated:</span>
+              <strong className="text-navy">{financialData.transportAllocated}</strong>
+            </div>
+            <div className="flex justify-between">
+              <span>Total Collected:</span>
+              <strong className="text-emerald-700">{financialData.transportPaid}</strong>
+            </div>
+            <div className="flex justify-between">
+              <span>Total Pending:</span>
+              <strong className="text-amber-700">{financialData.transportPending}</strong>
             </div>
           </div>
 

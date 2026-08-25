@@ -879,11 +879,27 @@ app.get('/api/payments/:id/receipt', auth, async (req, res, next) => {
 // Dashboard Data
 app.get('/api/dashboard', auth, async (req, res, next) => {
   try {
-    const [s, st, fc, p, c] = await Promise.all([
+    const [s, st, fc, p, tfc, tfp, c] = await Promise.all([
       q('SELECT COUNT(*)::int count FROM students'),
       q('SELECT COUNT(*)::int count FROM staff'),
-      q('SELECT COALESCE(SUM(amount_paid),0) total FROM payments'),
-      q('SELECT COALESCE(SUM(balance_amount),0) total FROM student_fee_allocations'),
+      q(`SELECT COALESCE(SUM(p.amount_paid),0) total 
+         FROM payments p 
+         JOIN student_fee_allocations sfa ON sfa.id = p.allocation_id 
+         JOIN fees f ON f.id = sfa.fee_id 
+         WHERE f.fee_type != 'Transport Fee'`),
+      q(`SELECT COALESCE(SUM(sfa.balance_amount),0) total 
+         FROM student_fee_allocations sfa 
+         JOIN fees f ON f.id = sfa.fee_id 
+         WHERE f.fee_type != 'Transport Fee'`),
+      q(`SELECT COALESCE(SUM(p.amount_paid),0) total 
+         FROM payments p 
+         JOIN student_fee_allocations sfa ON sfa.id = p.allocation_id 
+         JOIN fees f ON f.id = sfa.fee_id 
+         WHERE f.fee_type = 'Transport Fee'`),
+      q(`SELECT COALESCE(SUM(sfa.balance_amount),0) total 
+         FROM student_fee_allocations sfa 
+         JOIN fees f ON f.id = sfa.fee_id 
+         WHERE f.fee_type = 'Transport Fee'`),
       q("SELECT COUNT(*)::int count FROM complaints WHERE status!='Solved'")
     ]);
     res.json({
@@ -891,6 +907,8 @@ app.get('/api/dashboard', auth, async (req, res, next) => {
       staff: st[0].count,
       feeCollection: fc[0].total,
       pendingFees: p[0].total,
+      transportFeeCollection: tfc[0].total,
+      transportFeePending: tfp[0].total,
       complaints: c[0].count
     });
   } catch (e) {
