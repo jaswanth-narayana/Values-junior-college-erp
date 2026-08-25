@@ -79,7 +79,7 @@ const runInit = async () => {
       await client.query(`
         INSERT INTO users(username, name, email, password_hash, role) VALUES
         ('accountant', 'Finance Accountant', 'accountant@values.edu', crypt('Accountant@123', gen_salt('bf')), 'accountant'),
-        ('vice_principal', 'Vice Principal', 'viceprincipal@values.edu', crypt('VP@123', gen_salt('bf')), 'teacher')
+        ('vice_principal', 'Vice Principal', 'viceprincipal@values.edu', crypt('VicePrincipal@123', gen_salt('bf')), 'teacher')
         ON CONFLICT DO NOTHING
       `);
       console.log('✅ Accounts accountant@values.edu and viceprincipal@values.edu seeded.');
