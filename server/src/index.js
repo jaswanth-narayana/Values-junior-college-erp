@@ -521,6 +521,55 @@ app.get('/api/exams', auth, async (req, res, next) => {
   }
 });
 
+// Special override endpoint for attendance to join Student, Class, and Section names
+app.get('/api/attendance', auth, async (req, res, next) => {
+  try {
+    const page = Math.max(1, +req.query.page || 1);
+    const limit = Math.min(1000, +req.query.limit || 100);
+    const offset = (page - 1) * limit;
+
+    const data = await q(
+      `SELECT a.*, s.name as student_name, s.admission_number, c.name as class_name, sec.name as section_name 
+       FROM attendance a 
+       JOIN students s ON s.id = a.student_id 
+       LEFT JOIN classes c ON c.id = s.class_id 
+       LEFT JOIN sections sec ON sec.id = s.section_id 
+       ORDER BY a.date DESC, s.name ASC 
+       LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    );
+    res.json({ data, page, limit });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// Batch Attendance Recording Endpoint
+app.post('/api/attendance/batch', auth, async (req, res, next) => {
+  try {
+    const body = z.object({
+      date: z.string(),
+      records: z.array(z.object({
+        student_id: z.string(),
+        status: z.enum(['Present', 'Absent', 'Late', 'Excused'])
+      }))
+    }).parse(req.body);
+
+    for (const rec of body.records) {
+      await q(
+        `INSERT INTO attendance(student_id, date, status, marked_by) 
+         VALUES($1, $2, $3, $4) 
+         ON CONFLICT(student_id, date) 
+         DO UPDATE SET status = EXCLUDED.status, updated_at = NOW()`,
+        [rec.student_id, body.date, rec.status, req.user.id]
+      );
+    }
+    res.json({ message: 'Attendance recorded successfully for ' + body.records.length + ' students.' });
+  } catch (e) {
+    next(e);
+  }
+});
+
 // Special override endpoint for students to include Class & Section names
 app.get('/api/students', auth, async (req, res, next) => {
   try {

@@ -552,7 +552,7 @@ const config = {
   Attendance: [
     'Record daily attendance and analyze presence.',
     'attendance',
-    [['date', 'Date'], ['status', 'Status']]
+    [['date', 'Date'], ['student_name', 'Student Name'], ['admission_number', 'Admission No.'], ['class_name', 'Class'], ['section_name', 'Section'], ['status', 'Status']]
   ],
   Transport: [
     'Manage buses, routes, stops and student allocation.',
@@ -1126,7 +1126,22 @@ function Module({ type }) {
           }}
         />
       )}
-      {modal === 'add' && type !== 'Exam Manager' && (
+      {modal === 'add' && type === 'Attendance' && (
+        <AttendanceAddModal
+          close={() => setModal(null)}
+          save={async (records, date) => {
+            try {
+              await apiCall('/attendance/batch', 'POST', { date, records });
+              setNotice('Attendance recorded successfully.');
+              setModal(null);
+              fetchRows();
+            } catch (err) {
+              alert('Failed to save attendance: ' + err.message);
+            }
+          }}
+        />
+      )}
+      {modal === 'add' && type !== 'Exam Manager' && type !== 'Attendance' && (
         <Modal 
           title={'Add ' + type} 
           cols={cols} 
@@ -1433,6 +1448,214 @@ function ExamAddModal({ close, save }) {
 
         <button className="btn w-full py-3" disabled={loading}>
           {loading ? 'Creating Exam...' : 'Create Exam'}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function AttendanceAddModal({ close, save }) {
+  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [classId, setClassId] = useState('');
+  const [sectionId, setSectionId] = useState('');
+  const [presentInput, setPresentInput] = useState('');
+  
+  const [classesList, setClassesList] = useState([]);
+  const [sectionsList, setSectionsList] = useState([]);
+  const [studentsList, setStudentsList] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const [presentMap, setPresentMap] = useState({});
+
+  useEffect(() => {
+    apiCall('/classes').then(res => setClassesList(res.data || [])).catch(console.error);
+    apiCall('/sections').then(res => setSectionsList(res.data || [])).catch(console.error);
+  }, []);
+
+  const filteredSections = sectionsList.filter(s => s.class_id === classId);
+
+  useEffect(() => {
+    if (!classId || !sectionId) {
+      setStudentsList([]);
+      setPresentMap({});
+      setPresentInput('');
+      return;
+    }
+    setLoading(true);
+    apiCall('/students')
+      .then(res => {
+        const all = res.data || [];
+        const filtered = all.filter(s => s.class_id === classId && s.section_id === sectionId);
+        setStudentsList(filtered);
+        
+        const initialMap = {};
+        filtered.forEach(s => {
+          initialMap[s.id] = true;
+        });
+        setPresentMap(initialMap);
+        setPresentInput(filtered.length.toString());
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [classId, sectionId]);
+
+  const totalStudents = studentsList.length;
+  const presentCount = Object.values(presentMap).filter(Boolean).length;
+  const attendancePercentage = totalStudents > 0 ? ((presentCount / totalStudents) * 100).toFixed(1) : '0.0';
+
+  const handlePresentInputChange = (e) => {
+    const value = e.target.value;
+    setPresentInput(value);
+    const count = parseInt(value, 10);
+    if (!isNaN(count) && count >= 0 && count <= totalStudents) {
+      const updatedMap = {};
+      studentsList.forEach((s, idx) => {
+        updatedMap[s.id] = idx < count;
+      });
+      setPresentMap(updatedMap);
+    }
+  };
+
+  const handleCheckboxChange = (studentId, isChecked) => {
+    const nextMap = { ...presentMap, [studentId]: isChecked };
+    setPresentMap(nextMap);
+    const nextCount = Object.values(nextMap).filter(Boolean).length;
+    setPresentInput(nextCount.toString());
+  };
+
+  const toggleSelectAll = (checked) => {
+    const nextMap = {};
+    studentsList.forEach(s => {
+      nextMap[s.id] = checked;
+    });
+    setPresentMap(nextMap);
+    setPresentInput((checked ? totalStudents : 0).toString());
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!classId || !sectionId) {
+      alert('Please select a class and a section.');
+      return;
+    }
+    if (totalStudents === 0) {
+      alert('No students registered in this class/section to record attendance.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const records = studentsList.map(s => ({
+        student_id: s.id,
+        status: presentMap[s.id] ? 'Present' : 'Absent'
+      }));
+      await save(records, date);
+    } catch (err) {
+      alert(err.message || 'Failed to submit attendance.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-navy/60 p-4">
+      <form onSubmit={handleSubmit} className="max-h-[90vh] w-full max-w-lg overflow-auto rounded-2xl bg-white p-6 space-y-4 text-left">
+        <div className="flex justify-between border-b pb-3">
+          <b className="text-lg text-navy">Record Class Attendance</b>
+          <button type="button" onClick={close} className="p-1 text-slate-400 hover:text-slate-600"><X /></button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <label className="col-span-2 block">
+            <span className="mb-1 block text-xs font-semibold text-slate-600">Attendance Date *</span>
+            <input type="date" className="field" value={date} onChange={e => setDate(e.target.value)} required />
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-slate-600">Class *</span>
+            <select className="field" value={classId} onChange={e => { setClassId(e.target.value); setSectionId(''); }} required>
+              <option value="">Select Class</option>
+              {classesList.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold text-slate-600">Section *</span>
+            <select className="field" value={sectionId} onChange={e => setSectionId(e.target.value)} required>
+              <option value="">Select Section</option>
+              {filteredSections.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+          </label>
+        </div>
+
+        {classId && sectionId && (
+          <div className="border-t pt-4 space-y-4">
+            <div className="bg-sky-50 p-4 rounded-xl grid grid-cols-3 gap-2 text-center border border-sky-100">
+              <div>
+                <span className="block text-[10px] uppercase font-bold text-slate-400">Total in DB</span>
+                <b className="text-lg text-navy">{totalStudents}</b>
+              </div>
+              <div>
+                <span className="block text-[10px] uppercase font-bold text-slate-400">Present</span>
+                <b className="text-lg text-emerald-600">{presentCount}</b>
+              </div>
+              <div>
+                <span className="block text-[10px] uppercase font-bold text-slate-400">Rate (%)</span>
+                <b className="text-lg text-sky-600">{attendancePercentage}%</b>
+              </div>
+            </div>
+
+            {totalStudents > 0 ? (
+              <div className="space-y-3">
+                <label className="block">
+                  <span className="mb-1 block text-xs font-semibold text-slate-600">Enter Number of Present Students</span>
+                  <input 
+                    type="number" 
+                    className="field font-bold text-emerald-700" 
+                    min="0" 
+                    max={totalStudents} 
+                    value={presentInput} 
+                    onChange={handlePresentInputChange} 
+                  />
+                  <small className="text-[10px] text-slate-400 block mt-1">
+                    Entering a number will auto-check that many students. You can also customize checkmarks below.
+                  </small>
+                </label>
+
+                <div className="flex justify-between items-center border-b pb-2 pt-2">
+                  <span className="text-xs font-bold text-slate-500">Student Roster Checkbox List</span>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => toggleSelectAll(true)} className="text-[10px] font-bold text-sky-600 hover:underline">Select All</button>
+                    <span className="text-slate-300">|</span>
+                    <button type="button" onClick={() => toggleSelectAll(false)} className="text-[10px] font-bold text-rose-500 hover:underline">Deselect All</button>
+                  </div>
+                </div>
+
+                <div className="max-h-48 overflow-y-auto divide-y border rounded-lg bg-white p-2">
+                  {studentsList.map((s, idx) => (
+                    <label key={s.id} className="flex justify-between items-center py-2 px-1 hover:bg-slate-50 cursor-pointer">
+                      <div className="text-xs">
+                        <span className="text-slate-400 mr-2 font-mono">#{idx+1}</span>
+                        <b className="text-slate-700">{s.name}</b>
+                        <span className="text-[10px] text-slate-400 block">Adm No: {s.admission_number}</span>
+                      </div>
+                      <input 
+                        type="checkbox" 
+                        className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500"
+                        checked={!!presentMap[s.id]} 
+                        onChange={e => handleCheckboxChange(s.id, e.target.checked)} 
+                      />
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              !loading && <div className="text-center text-sm py-6 text-slate-400">No students registered in this class/section.</div>
+            )}
+          </div>
+        )}
+
+        <button className="btn w-full py-3" disabled={loading || (classId && sectionId && totalStudents === 0)}>
+          {loading ? 'Saving Attendance...' : 'Save Attendance Records'}
         </button>
       </form>
     </div>
